@@ -1,0 +1,53 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  format-check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+          toolchain: 1.76.0
+          components: rustfmt
+    - name: Rustfmt Check
+      uses: actions-rust-lang/rustfmt@v1
+  check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+          toolchain: 1.76.0
+          components: clippy
+    - name: Check
+      run: cargo check --all-targets
+    - name: Clippy
+      run: cargo clippy --all -- -D clippy::pedantic
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-musl]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+          toolchain: 1.76.0
+          target: ${{ matrix.target }}
+    - name: Build
+      run: cargo build --target "${{ matrix.target }}" --verbose
+    - name: Run tests
+      if: matrix.target == 'x86_64-unknown-linux-musl'
+      run: cargo test --target "${{ matrix.target }}" --verbose

@@ -61,10 +61,11 @@ impl Options {
             .and_then(|mut m| m.remove(self.get_config_key())))
     }
     fn write(&self, config: &Map) -> Result<(), Box<dyn Error>> {
-        let p = &self.data_file;
+        let p = self.data_file.canonicalize()?;
         if let Some(d) = p.parent() {
             create_dir_all(d)?;
         }
+        log::debug!("Writing config to {}", p.display());
         std::fs::write(p, toml::to_string(config)?)?;
         Ok(())
     }
@@ -146,7 +147,9 @@ fn main() -> ExitCode {
                 .get_config()
                 .expect("Should read config")
                 .unwrap_or_else(Map::default);
-            conf.insert(
+            let key = args.get_config_key();
+            log::debug!("Updating status for {key}");
+            let x = conf.insert(
                 args.get_config_key().to_owned(),
                 Status {
                     commit_hash: commit_hash.to_owned(),
@@ -154,6 +157,12 @@ fn main() -> ExitCode {
                     check_time: Utc::now(),
                 },
             );
+            if log::log_enabled!(log::Level::Debug) {
+                log::debug!(
+                    "{} '{key}'",
+                    if x.is_none() { "Created" } else { "Updated" }
+                );
+            }
             args.write(&conf).expect("Should write config to file");
             ExitCode::SUCCESS
         }

@@ -116,12 +116,12 @@ fn do_check<T: AsRef<[u8]>>(seed: Option<T>, status: Option<Status>) -> ExitCode
     if let Some(st) = status {
         let mut rng = get_rng(seed);
         if should_run_now(&mut rng, st.change_time, st.check_time) {
-            ExitCode::FAILURE
-        } else {
             ExitCode::SUCCESS
+        } else {
+            ExitCode::FAILURE
         }
     } else {
-        ExitCode::FAILURE
+        ExitCode::SUCCESS
     }
 }
 

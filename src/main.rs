@@ -13,14 +13,14 @@ use rand::{rngs::StdRng, Rng, SeedableRng};
 
 use prob_check_repo::{Hash, Status};
 
-type Map<A, B> = BTreeMap<A, B>;
+type Map = BTreeMap<String, Status>;
 
 #[derive(Parser, Debug, Clone)]
 #[command(version, about, long_about = None)]
 struct Options {
     #[arg(short, long)]
     data_file: PathBuf,
-    path: PathBuf,
+    path: String,
 
     #[command(subcommand)]
     command: Command,
@@ -41,7 +41,7 @@ enum Command {
 }
 
 impl Options {
-    fn get_config(&self) -> Result<Option<Map<String, Status>>, Box<dyn Error>> {
+    fn get_config(&self) -> Result<Option<Map>, Box<dyn Error>> {
         let s = match read_to_string(&self.data_file) {
             Ok(s) => s,
             Err(e) => {
@@ -59,7 +59,7 @@ impl Options {
             .get_config()?
             .and_then(|mut m| m.remove(self.get_config_key())))
     }
-    fn write(&self, config: &Map<String, Status>) -> Result<(), Box<dyn Error>> {
+    fn write(&self, config: &Map) -> Result<(), Box<dyn Error>> {
         let p = &self.data_file;
         if let Some(d) = p.parent() {
             create_dir_all(d)?;
@@ -68,7 +68,7 @@ impl Options {
         Ok(())
     }
     fn get_config_key(&self) -> &str {
-        self.path.to_str().expect("Paths should be unicode")
+        &self.path
     }
 }
 

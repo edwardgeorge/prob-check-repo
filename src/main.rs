@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::BTreeMap,
     error::Error,
     fs::{create_dir_all, read_to_string},
     io::ErrorKind,
@@ -12,6 +12,8 @@ use clap::{Parser, Subcommand};
 use rand::{rngs::StdRng, Rng, SeedableRng};
 
 use prob_check_repo::{Hash, Status};
+
+type Map<A, B> = BTreeMap<A, B>;
 
 #[derive(Parser, Debug, Clone)]
 #[command(version, about, long_about = None)]
@@ -39,7 +41,7 @@ enum Command {
 }
 
 impl Options {
-    fn get_config(&self) -> Result<Option<HashMap<String, Status>>, Box<dyn Error>> {
+    fn get_config(&self) -> Result<Option<Map<String, Status>>, Box<dyn Error>> {
         let s = match read_to_string(&self.data_file) {
             Ok(s) => s,
             Err(e) => {
@@ -57,7 +59,7 @@ impl Options {
             .get_config()?
             .and_then(|mut m| m.remove(self.get_config_key())))
     }
-    fn write(&self, config: &HashMap<String, Status>) -> Result<(), Box<dyn Error>> {
+    fn write(&self, config: &Map<String, Status>) -> Result<(), Box<dyn Error>> {
         let p = &self.data_file;
         if let Some(d) = p.parent() {
             create_dir_all(d)?;
@@ -142,7 +144,7 @@ fn main() -> ExitCode {
             let mut conf = args
                 .get_config()
                 .expect("Should read config")
-                .unwrap_or_else(HashMap::default);
+                .unwrap_or_else(Map::default);
             conf.insert(
                 args.get_config_key().to_owned(),
                 Status {

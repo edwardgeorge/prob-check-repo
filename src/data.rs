@@ -26,6 +26,8 @@ impl Hash {
 impl FromStr for Hash {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // trim off prefix chars from 'git submodule status'
+        let s = s.trim_start_matches([' ', '+', '-', 'U']);
         let l = s.len();
         let d = hex::decode(s).map_err(|e| format!("Could not decode hash from hex '{s}': {e}"))?;
         if l == 40 {

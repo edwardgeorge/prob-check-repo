@@ -109,11 +109,13 @@ fn should_run_now<Tz: TimeZone, R: Rng>(
 
 fn get_rng<T: AsRef<[u8]>>(seed: Option<T>) -> StdRng {
     if let Some(s) = seed {
-        let hash = blake3::hash(s.as_ref());
-        StdRng::from_seed(*hash.as_bytes())
-    } else {
-        StdRng::from_rng(rand::thread_rng()).expect("Should create StdRng")
+        let i = s.as_ref();
+        if !i.is_empty() {
+            let hash = blake3::hash(i);
+            return StdRng::from_seed(*hash.as_bytes());
+        }
     }
+    StdRng::from_rng(rand::thread_rng()).expect("Should create StdRng")
 }
 
 fn do_check<T: AsRef<[u8]>>(seed: Option<T>, status: Option<Status>) -> ExitCode {

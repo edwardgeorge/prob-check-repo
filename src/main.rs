@@ -20,6 +20,7 @@ type Map = BTreeMap<String, Status>;
 struct Options {
     #[arg(short, long)]
     data_file: PathBuf,
+    #[arg(short = 'n', long = "name")]
     path: String,
 
     #[command(subcommand)]

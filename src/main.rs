@@ -115,6 +115,9 @@ fn get_rng<T: AsRef<[u8]>>(seed: Option<T>) -> StdRng {
 
 fn do_check<T: AsRef<[u8]>>(seed: Option<T>, status: Option<Status>) -> ExitCode {
     if let Some(st) = status {
+        if st.archived.unwrap_or(false) {
+            return ExitCode::FAILURE;
+        }
         let mut rng = get_rng(seed);
         if should_run_now(&mut rng, st.change_time, st.check_time) {
             ExitCode::SUCCESS
@@ -144,22 +147,20 @@ fn main() -> ExitCode {
                 .get_config()
                 .expect("Should read config")
                 .unwrap_or_else(Map::default);
-            let key = args.get_config_key();
+            let key = args.get_config_key().to_owned();
             log::debug!("Updating status for {key}");
-            let x = conf.insert(
-                args.get_config_key().to_owned(),
-                Status {
+            conf.entry(key)
+                .and_modify(|s| {
+                    s.commit_hash = commit_hash.clone();
+                    s.change_time = commit_time.to_utc();
+                    s.check_time = Utc::now();
+                })
+                .or_insert_with(|| Status {
                     commit_hash: commit_hash.to_owned(),
                     change_time: commit_time.to_utc(),
                     check_time: Utc::now(),
-                },
-            );
-            if log::log_enabled!(log::Level::Debug) {
-                log::debug!(
-                    "{} '{key}'",
-                    if x.is_none() { "Created" } else { "Updated" }
-                );
-            }
+                    archived: None,
+                });
             args.write(&conf).expect("Should write config to file");
             ExitCode::SUCCESS
         }

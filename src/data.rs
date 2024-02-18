@@ -64,4 +64,5 @@ pub struct Status {
     pub change_time: DateTime<Utc>,
     #[serde_as(as = "DisplayFromStr")]
     pub commit_hash: Hash,
+    pub archived: Option<bool>,
 }

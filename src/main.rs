@@ -85,9 +85,8 @@ fn calculate_probability<Tz: TimeZone>(
     if mins1 <= 0 || mins2 <= 0 || mins2 > mins1 {
         return 1.0;
     }
-    let x = mins1 / mins2;
-    // should never be divbyzero due to mins2 > mins1 check above
-    3.0 / x as f64
+    let x = mins1 as f64 / mins2 as f64;
+    3.0 / x
 }
 
 fn should_run_now<Tz: TimeZone, R: Rng>(

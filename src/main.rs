@@ -20,8 +20,6 @@ type Map = BTreeMap<String, Status>;
 struct Options {
     #[arg(short, long)]
     data_file: PathBuf,
-    #[arg(short = 'n', long = "name")]
-    path: String,
 
     #[command(subcommand)]
     command: Command,
@@ -30,15 +28,20 @@ struct Options {
 #[derive(Debug, Clone, Subcommand)]
 enum Command {
     Check {
+        #[arg(short = 'n', long = "name")]
+        name: String,
         #[arg(short, long)]
         seed: Option<String>,
     },
     Record {
+        #[arg(short = 'n', long = "name")]
+        name: String,
         #[arg(short = 't', long)]
         commit_time: DateTime<FixedOffset>,
         #[arg(short = 'c', long)]
         commit_hash: Hash,
     },
+    Summarise,
 }
 
 impl Options {
@@ -55,11 +58,6 @@ impl Options {
         };
         Ok(toml::from_str(&s)?)
     }
-    fn get_status(&self) -> Result<Option<Status>, Box<dyn Error>> {
-        Ok(self
-            .get_config()?
-            .and_then(|mut m| m.remove(self.get_config_key())))
-    }
     fn write(&self, config: &Map) -> Result<(), Box<dyn Error>> {
         let p = self.data_file.canonicalize()?;
         if let Some(d) = p.parent() {
@@ -68,9 +66,6 @@ impl Options {
         log::debug!("Writing config to {}", p.display());
         std::fs::write(p, toml::to_string(config)?)?;
         Ok(())
-    }
-    fn get_config_key(&self) -> &str {
-        &self.path
     }
 }
 
@@ -132,13 +127,16 @@ fn main() -> ExitCode {
     env_logger::init();
     let args = Options::parse();
     match args.command {
-        Command::Check { ref seed } => {
+        Command::Check { ref seed, ref name } => {
             return do_check(
                 seed.as_ref(),
-                args.get_status().expect("Should read status"),
+                args.get_config()
+                    .expect("Should config")
+                    .and_then(|mut m| m.remove(name)),
             );
         }
         Command::Record {
+            ref name,
             ref commit_hash,
             ref commit_time,
         } => {
@@ -146,9 +144,8 @@ fn main() -> ExitCode {
                 .get_config()
                 .expect("Should read config")
                 .unwrap_or_else(Map::default);
-            let key = args.get_config_key().to_owned();
-            log::debug!("Updating status for {key}");
-            conf.entry(key)
+            log::debug!("Updating status for {name}");
+            conf.entry(name.to_owned())
                 .and_modify(|s| {
                     s.commit_hash = commit_hash.clone();
                     s.change_time = commit_time.to_utc();
@@ -161,6 +158,16 @@ fn main() -> ExitCode {
                     archived: None,
                 });
             args.write(&conf).expect("Should write config to file");
+            ExitCode::SUCCESS
+        }
+        Command::Summarise => {
+            prob_check_repo::summary_repo_age(
+                args.get_config()
+                    .unwrap()
+                    .expect("Data file not found")
+                    .values(),
+                true,
+            );
             ExitCode::SUCCESS
         }
     }

@@ -80,19 +80,14 @@ fn calculate_probability<Tz: TimeZone>(
     last_check: DateTime<Tz>,
     now: DateTime<Tz>,
 ) -> f64 {
-    let days = (last_check.clone() - last_change).num_days();
-    log::debug!("days with no update: {days}");
-    if days <= 0 {
+    let mins1 = (last_check.clone() - last_change).num_minutes();
+    let mins2 = (now - last_check).num_minutes();
+    if mins1 <= 0 || mins2 <= 0 || mins2 > mins1 {
         return 1.0;
     }
-    let prob = 3.0 / days as f64;
-    log::debug!("probability then of change: {prob}");
-    let elapsed = (now - last_check).num_days();
-    log::debug!("days elapsed: {elapsed}");
-    if elapsed <= 0 {
-        return prob;
-    }
-    prob * elapsed as f64
+    let x = mins1 / mins2;
+    // should never be divbyzero due to mins2 > mins1 check above
+    3.0 / x as f64
 }
 
 fn should_run_now<Tz: TimeZone, R: Rng>(

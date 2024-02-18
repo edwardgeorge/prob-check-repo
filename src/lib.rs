@@ -1,4 +1,4 @@
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 
 mod data;
 pub use data::{Hash, Status};
@@ -31,26 +31,34 @@ static BUCKET_LABELS: &[&str] = &[
     "10 Years +",
 ];
 
-/// # Panics
-///
-/// Will panic if any `Status::change_time` is in the future
-#[allow(clippy::cast_sign_loss)]
 pub fn summary_repo_age<'a, I>(it: I, ignore_archived: bool)
 where
     I: IntoIterator<Item = &'a Status>,
 {
-    let now = Utc::now();
-    //length of above + 1
-    let counters: &mut [u64] = &mut [0; 9];
-
-    'statuses: for st in it {
+    summarise_age_by(it, |st| {
         if ignore_archived && st.archived.unwrap_or(false) {
-            continue 'statuses;
+            None
+        } else {
+            Some(st.change_time)
         }
-        let ch = (now - st.change_time).num_minutes();
-        assert!(ch >= 0, "Time in future: {:?}!", st.change_time);
-        let ix = bisection::bisect_left(BUCKETS, &(ch as u64));
-        counters[ix] += 1;
+    });
+}
+
+#[allow(clippy::cast_sign_loss)]
+fn summarise_age_by<'a, I, F>(it: I, by: F)
+where
+    I: IntoIterator<Item = &'a Status>,
+    F: Fn(&'a Status) -> Option<DateTime<Utc>>,
+{
+    let now = Utc::now();
+    let counters: &mut [u64] = &mut [0; 9];
+    for st in it {
+        if let Some(t) = by(st) {
+            let ch = (now - t).num_minutes();
+            assert!(ch >= 0, "Time in future: {:?}!", st.change_time);
+            let ix = bisection::bisect_left(BUCKETS, &(ch as u64));
+            counters[ix] += 1;
+        }
     }
     for (i, j) in BUCKET_LABELS.iter().enumerate() {
         println!("{j}: {}", counters[i]);

@@ -44,6 +44,13 @@ where
     });
 }
 
+pub fn summary_check_age<'a, I>(it: I)
+where
+    I: IntoIterator<Item = &'a Status>,
+{
+    summarise_age_by(it, |st| Some(st.check_time));
+}
+
 #[allow(clippy::cast_sign_loss)]
 fn summarise_age_by<'a, I, F>(it: I, by: F)
 where

@@ -41,7 +41,16 @@ enum Command {
         #[arg(short = 'c', long)]
         commit_hash: Hash,
     },
-    Summarise,
+    Summarise {
+        #[command(subcommand)]
+        ty: Summary,
+    },
+}
+
+#[derive(Debug, Clone, Copy, Subcommand)]
+enum Summary {
+    RepoAge,
+    CheckTime,
 }
 
 impl Options {
@@ -160,14 +169,12 @@ fn main() -> ExitCode {
             args.write(&conf).expect("Should write config to file");
             ExitCode::SUCCESS
         }
-        Command::Summarise => {
-            prob_check_repo::summary_repo_age(
-                args.get_config()
-                    .unwrap()
-                    .expect("Data file not found")
-                    .values(),
-                true,
-            );
+        Command::Summarise { ty } => {
+            let v = args.get_config().unwrap().expect("Data file not found");
+            match ty {
+                Summary::RepoAge => prob_check_repo::summary_repo_age(v.values(), true),
+                Summary::CheckTime => prob_check_repo::summary_check_age(v.values()),
+            }
             ExitCode::SUCCESS
         }
     }

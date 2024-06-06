@@ -16,4 +16,4 @@ log = "0.4.20"
 rand = "0.8.5"
 serde = { version = "1.0.196", features = ["derive"] }
 serde_with = "3.6.1"
-toml = "0.8.10"
+toml = "0.8.14"

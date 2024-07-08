@@ -15,5 +15,5 @@ hex = "0.4.3"
 log = "0.4.22"
 rand = "0.8.5"
 serde = { version = "1.0.204", features = ["derive"] }
-serde_with = "3.8.2"
+serde_with = "3.8.3"
 toml = "0.8.14"

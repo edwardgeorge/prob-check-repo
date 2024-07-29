@@ -9,7 +9,7 @@ edition = "2021"
 bisection = "0.1.0"
 blake3 = "1.5.3"
 chrono = { version = "0.4.38", features = ["serde"] }
-clap = { version = "4.5.9", features = ["derive"] }
+clap = { version = "4.5.11", features = ["derive"] }
 env_logger = "0.11.3"
 hex = "0.4.3"
 log = "0.4.22"
